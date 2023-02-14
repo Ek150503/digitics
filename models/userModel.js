@@ -1,4 +1,6 @@
+const bcrypt = require('bcrypt');
 const mongoose = require('mongoose');
+const { CustomError } = require('../middlewares/errorHandler');
 
 const userSchema = mongoose.Schema({
   firstname: {
@@ -23,6 +25,10 @@ const userSchema = mongoose.Schema({
     type: String,
     required: true,
   },
+  role: {
+    type: String,
+    default: 'user',
+  },
 });
 
 userSchema.methods.toJSON = function () {
@@ -34,6 +40,33 @@ userSchema.methods.toJSON = function () {
   return userObject;
 };
 
+userSchema.pre('save', async function (next) {
+  const user = this;
+
+  const salt = await bcrypt.genSalt(10);
+  user.password = await bcrypt.hash(user.password, salt);
+
+  next();
+});
+
+userSchema.statics.findByCredentials = async function (email, password) {
+  const user = await this.findOne({ email });
+
+  if (!user) {
+    throw new CustomError(400, 'Email or password is incorrect');
+  }
+
+  const isMatch = await bcrypt.compare(password, user.password);
+
+  if (!isMatch) {
+    throw new CustomError(400, 'Email or password is incorrect');
+  }
+
+  return user;
+};
+
 const User = mongoose.model('User', userSchema);
 
 module.exports = User;
+
+// node readme
