@@ -1,4 +1,5 @@
 const asyncHandler = require('express-async-handler');
+const Token = require('../config/jwtToken');
 const { CustomError } = require('./../middlewares/errorHandler');
 const User = require('./../models/userModel');
 
@@ -26,13 +27,27 @@ class Users {
       await newUser.save();
       res.status(200).json({
         success: true,
-        msg: 'created user successfully',
+        message: 'created user successfully',
         user: newUser,
+        token: Token.generateToken(newUser._id),
       });
     } else {
       // User is already existing
       throw new CustomError(400, `User ${req.body.email} already exists`);
     }
+  });
+
+  static loginUser = asyncHandler(async (req, res) => {
+    const { email, password } = req.body;
+
+    const user = await User.findByCredentials(email, password);
+
+    res.status(200).json({
+      success: true,
+      message: 'login user successfully',
+      user: user,
+      token: Token.generateToken(user._id),
+    });
   });
 }
 
