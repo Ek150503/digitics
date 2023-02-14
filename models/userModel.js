@@ -14,7 +14,7 @@ const userSchema = mongoose.Schema({
     required: true,
     unique: true,
   },
-  modbile: {
+  mobile: {
     type: String,
     required: true,
     unique: true,
@@ -24,6 +24,15 @@ const userSchema = mongoose.Schema({
     required: true,
   },
 });
+
+userSchema.methods.toJSON = function () {
+  const user = this;
+  const userObject = user.toObject();
+
+  delete userObject.password;
+
+  return userObject;
+};
 
 const User = mongoose.model('User', userSchema);
 
